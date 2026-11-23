@@ -869,13 +869,17 @@
           const j = await r.json();
           if (r.ok && Array.isArray(j.models)) {
             const usable = j.models
-              .filter(m => !m.supportedGenerationMethods || m.supportedGenerationMethods.includes('generateContent'))
+              .filter(m => {
+                const name = (m.name || '').toLowerCase();
+                if (name.includes('tts') || name.includes('audio') || name.includes('imagen') || name.includes('veo') || name.includes('embedding') || name.includes('lyria') || name.includes('computer-use')) return false;
+                return !m.supportedGenerationMethods || m.supportedGenerationMethods.includes('generateContent');
+              })
               .map(m => m.name.replace(/^models\//, ''));
             if (usable.length) return usable;
           }
         } catch (_) {}
       }
-      return ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+      return ['gemini-3.8-flash', 'gemini-3-flash-preview', 'gemini-2.5-flash-lite'];
     }
 
     document.getElementById('btnGenerateGemini').addEventListener('click', async () => {
@@ -902,15 +906,18 @@
       try {
         const availableModels = await discoverAvailableModels(apiKey);
         const prioritized = [
-          ...availableModels.filter(m => m.includes('flash')),
+          'gemini-3.8-flash',
+          ...availableModels.filter(m => m.includes('3.') && m.includes('flash')),
+          ...availableModels.filter(m => m.includes('flash') && !m.includes('3.')),
           ...availableModels.filter(m => !m.includes('flash'))
-        ].slice(0, 6);
+        ];
+        const uniquePrioritized = [...new Set(prioritized)].slice(0, 8);
 
         let text = null;
         let usedModel = '';
         const errors = [];
 
-        for (const modelName of prioritized) {
+        for (const modelName of uniquePrioritized) {
           btn.textContent = `Testando ${modelName}...`;
           const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(apiKey)}`, {
             method: 'POST',
@@ -918,7 +925,10 @@
               'Content-Type': 'application/json',
               'x-goog-api-key': apiKey
             },
-            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: { responseModalities: ['TEXT'] }
+            })
           });
           const data = await res.json();
           if (res.ok && data?.candidates?.[0]?.content?.parts?.[0]?.text) {
