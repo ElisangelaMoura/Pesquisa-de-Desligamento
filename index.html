@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>People Analytics • Inteligência de Desligamentos</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -33,18 +33,18 @@
       </div>
 
       <div class="flex flex-wrap items-center gap-2.5">
-        <label class="cursor-pointer inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-semibold transition shadow-sm">
+        <label for="fileInput" class="cursor-pointer inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-semibold transition shadow-sm">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
           <span>Importar Planilha (.xlsx)</span>
-          <input type="file" id="fileInput" accept=".xlsx,.xls" class="hidden" />
         </label>
+        <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" class="hidden" />
 
-        <button id="btnConfigAI" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs sm:text-sm font-medium transition">
+        <button id="btnConfigAI" type="button" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs sm:text-sm font-medium transition">
           <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
           <span id="aiModeLabel">IA: Motor Local Ativo</span>
         </button>
 
-        <button id="btnExport" disabled class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 border border-slate-700 text-slate-200 text-xs sm:text-sm font-medium transition">
+        <button id="btnExport" type="button" disabled class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 border border-slate-700 text-slate-200 text-xs sm:text-sm font-medium transition">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
           <span>Exportar Recorte</span>
         </button>
@@ -57,16 +57,16 @@
     <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
       <div class="flex items-center justify-between mb-3">
         <h3 class="text-base font-bold text-slate-900">Configurar Parecer por IA</h3>
-        <button id="closeAiModal" class="text-slate-400 hover:text-slate-700 text-xl leading-none">&times;</button>
+        <button id="closeAiModal" type="button" class="text-slate-400 hover:text-slate-700 text-xl leading-none">&times;</button>
       </div>
       <p class="text-xs text-slate-600 mb-4 leading-relaxed">
         Por padrão, o sistema gera <strong>pareceres executivos instantâneos localmente</strong> (zero custo e 100% privacidade dos dados nominais). Opcionalmente, insira uma chave da <strong>API Gemini</strong> (salva apenas no seu navegador) para pareceres generativos aprofundados.
       </p>
       <label class="block text-xs font-semibold text-slate-700 mb-1">Chave API Google Gemini (Opcional)</label>
-      <input type="password" id="geminiKeyInput" placeholder="AIzaSy..." class="w-full px-3 py-2 border border-slate-300 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+      <input type="password" id="geminiKeyInput" placeholder="AQ.... ou AIza..." class="w-full px-3 py-2 border border-slate-300 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
       <div class="flex justify-end gap-2">
-        <button id="clearGeminiKey" class="px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Usar Só Motor Local</button>
-        <button id="saveGeminiKey" class="px-4 py-2 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg">Salvar Configuração</button>
+        <button id="clearGeminiKey" type="button" class="px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Usar Só Motor Local</button>
+        <button id="saveGeminiKey" type="button" class="px-4 py-2 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg">Salvar Configuração</button>
       </div>
     </div>
   </div>
@@ -75,7 +75,7 @@
   <main class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 space-y-6">
 
     <!-- Empty State / Upload Dropzone -->
-    <section id="emptyState" class="card p-10 text-center border-2 border-dashed border-slate-300 bg-white">
+    <section id="emptyState" class="card p-10 text-center border-2 border-dashed border-slate-300 bg-white transition">
       <div class="w-14 h-14 mx-auto mb-4 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
         <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
       </div>
@@ -83,10 +83,10 @@
       <p class="text-sm text-slate-500 max-w-xl mx-auto mb-5">
         O painel lê automaticamente as abas <strong>Form1</strong>, <strong>DIMENSÕES</strong>, <strong>DEPARTAMENTOS</strong> e <strong>RELATÓRIO DE DESLIGAMENTO</strong>, cruza as matrículas e libera filtros e pareceres instantâneos no navegador.
       </p>
-      <label class="cursor-pointer inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold transition">
+      <label for="fileInput" class="cursor-pointer inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold transition">
         <span>Selecionar arquivo Excel (.xlsx)</span>
-        <input type="file" id="fileInputHero" accept=".xlsx,.xls" class="hidden" />
       </label>
+      <p id="uploadFeedback" class="text-xs text-slate-400 mt-3">Ou arraste e solte o arquivo Excel aqui</p>
     </section>
 
     <!-- Dashboard Content (Hidden until file loaded) -->
@@ -100,7 +100,7 @@
           <span>•</span>
           <span>Registros cruzados (Pesquisa × Relatório): <strong id="matchRateLabel" class="text-slate-800">-</strong></span>
         </div>
-        <button id="btnResetFilters" class="text-emerald-700 hover:text-emerald-800 font-semibold">Limpar todos os filtros</button>
+        <button id="btnResetFilters" type="button" class="text-emerald-700 hover:text-emerald-800 font-semibold">Limpar todos os filtros</button>
       </div>
 
       <!-- Multi-Dimensional Filter Panel -->
@@ -173,10 +173,10 @@
             <h2 class="text-base font-bold text-slate-900">Diagnóstico Executivo Instantâneo do Recorte</h2>
           </div>
           <div class="flex items-center gap-2">
-            <button id="btnGenerateGemini" class="hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition">
+            <button id="btnGenerateGemini" type="button" class="hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition">
               <span>Aprofundar com Gemini API</span>
             </button>
-            <button id="btnCopyOpinion" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs font-semibold transition">
+            <button id="btnCopyOpinion" type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs font-semibold transition">
               <span>Copiar Parecer</span>
             </button>
           </div>
@@ -291,43 +291,84 @@
 
     function cleanStr(v) {
       if (v === null || v === undefined) return '';
-      return String(v).replace(/ /g, ' ').replace(/\s+/g, ' ').trim();
+      return String(v).replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
     }
 
-    // Listeners de Upload
-    ['fileInput', 'fileInputHero'].forEach(id => {
-      document.getElementById(id).addEventListener('change', handleFileUpload);
-    });
-
-    function handleFileUpload(e) {
-      const file = e.target.files[0];
+    function processFile(file) {
       if (!file) return;
+      const feedback = document.getElementById('uploadFeedback');
+      if (feedback) feedback.textContent = 'Processando "' + file.name + '"...';
+
+      if (typeof XLSX === 'undefined') {
+        alert('A biblioteca de leitura Excel (XLSX) não carregou. Verifique sua conexão com a internet e recarregue a página.');
+        return;
+      }
+
       document.getElementById('fileNameLabel').textContent = file.name;
 
       const reader = new FileReader();
       reader.onload = function(evt) {
-        const data = new Uint8Array(evt.target.result);
-        const workbook = XLSX.read(data, { type: 'array', cellDates: true });
-        processWorkbook(workbook);
+        try {
+          const data = new Uint8Array(evt.target.result);
+          const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+          processWorkbook(workbook);
+        } catch (err) {
+          console.error(err);
+          alert('Erro ao ler a planilha: ' + err.message);
+        }
+      };
+      reader.onerror = function() {
+        alert('Não foi possível abrir o arquivo selecionado.');
       };
       reader.readAsArrayBuffer(file);
     }
 
-    function processWorkbook(wb) {
-      const formSheet = wb.Sheets['Form1'];
-      const dimSheet = wb.Sheets['DIMENSÕES'];
-      const deptSheet = wb.Sheets['DEPARTAMENTOS'];
-      const relSheet = wb.Sheets['RELATÓRIO DE DESLIGAMENTO'];
+    // Listener de Upload + Drag & Drop
+    const fileInput = document.getElementById('fileInput');
+    fileInput.addEventListener('change', function(e) {
+      if (e.target.files && e.target.files[0]) {
+        processFile(e.target.files[0]);
+        e.target.value = '';
+      }
+    });
 
+    const emptyState = document.getElementById('emptyState');
+    emptyState.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      emptyState.classList.add('border-emerald-500', 'bg-emerald-50/30');
+    });
+    emptyState.addEventListener('dragleave', function() {
+      emptyState.classList.remove('border-emerald-500', 'bg-emerald-50/30');
+    });
+    emptyState.addEventListener('drop', function(e) {
+      e.preventDefault();
+      emptyState.classList.remove('border-emerald-500', 'bg-emerald-50/30');
+      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+        processFile(e.dataTransfer.files[0]);
+      }
+    });
+
+    function processWorkbook(wb) {
+      const formSheetName = wb.SheetNames.find(n => n.trim().toLowerCase() === 'form1') || wb.SheetNames[0];
+      const dimSheetName = wb.SheetNames.find(n => n.trim().toUpperCase().includes('DIMENS'));
+      const deptSheetName = wb.SheetNames.find(n => n.trim().toUpperCase().includes('DEPARTAMENTO'));
+      const relSheetName = wb.SheetNames.find(n => n.trim().toUpperCase().includes('RELAT'));
+
+      const formSheet = wb.Sheets[formSheetName];
       if (!formSheet) {
-        alert('Aba "Form1" não encontrada na planilha.');
+        alert('Nenhuma aba válida encontrada na planilha.');
         return;
       }
 
       const formRows = XLSX.utils.sheet_to_json(formSheet, { defval: null });
-      const dimRows = dimSheet ? XLSX.utils.sheet_to_json(dimSheet, { defval: null }) : [];
-      const deptRows = deptSheet ? XLSX.utils.sheet_to_json(deptSheet, { defval: null }) : [];
-      const relRows = relSheet ? XLSX.utils.sheet_to_json(relSheet, { defval: null }) : [];
+      const dimRows = dimSheetName ? XLSX.utils.sheet_to_json(wb.Sheets[dimSheetName], { defval: null }) : [];
+      const deptRows = deptSheetName ? XLSX.utils.sheet_to_json(wb.Sheets[deptSheetName], { defval: null }) : [];
+      const relRows = relSheetName ? XLSX.utils.sheet_to_json(wb.Sheets[relSheetName], { defval: null }) : [];
+
+      if (!formRows.length) {
+        alert('A aba "' + formSheetName + '" está vazia.');
+        return;
+      }
 
       // 1. Mapa de Dimensões
       questionDimensionMap = {};
@@ -339,20 +380,20 @@
 
       // Identificar perguntas Likert nas colunas do Form1
       likertQuestions = [];
-      if (formRows.length > 0) {
-        Object.keys(formRows[0]).forEach(col => {
-          const cClean = cleanStr(col);
-          // Verifica se algum valor na coluna pertence à escala Likert
-          const hasLikert = formRows.some(row => LIKERT_SCORES[cleanStr(row[col])] !== undefined);
-          if (hasLikert) {
-            likertQuestions.push({
-              rawKey: col,
-              cleanKey: cClean,
-              dimensao: questionDimensionMap[cClean] || 'Geral'
-            });
-          }
-        });
-      }
+      const allCols = new Set();
+      formRows.forEach(r => Object.keys(r).forEach(k => allCols.add(k)));
+
+      allCols.forEach(col => {
+        const cClean = cleanStr(col);
+        const hasLikert = formRows.some(row => LIKERT_SCORES[cleanStr(row[col])] !== undefined);
+        if (hasLikert) {
+          likertQuestions.push({
+            rawKey: col,
+            cleanKey: cClean,
+            dimensao: questionDimensionMap[cClean] || 'Geral'
+          });
+        }
+      });
 
       // 2. Mapa de Departamentos
       const deptMap = {};
@@ -383,7 +424,6 @@
         const relInfo = relMap[mat] || null;
         if (relInfo) matchedCount++;
 
-        // Calcular tempo de casa (em anos) se houver datas no relatório
         let tenureYears = null;
         if (relInfo && relInfo['DATA ADMISSÃO'] && relInfo['DATA DESLIGAMENTO']) {
           const dAdm = new Date(relInfo['DATA ADMISSÃO']);
@@ -546,17 +586,14 @@
       const totalBase = mergedRecords.length || 1;
       const vol = filteredRecords.filter(r => r.tipo === 'Voluntário').length;
 
-      // Favorabilidade geral
       const dimStats = computeDimensionStats(filteredRecords);
       const totResp = dimStats.reduce((acc, d) => acc + d.respostas, 0);
       const totFav = dimStats.reduce((acc, d) => acc + (d.favPct / 100) * d.respostas, 0);
       const favGeral = totResp ? (totFav / totResp) * 100 : 0;
 
-      // Nota média condução
       const notas = filteredRecords.map(r => r.notaConducao).filter(n => n !== null && !isNaN(n));
       const mediaNota = notas.length ? notas.reduce((a, b) => a + b, 0) / notas.length : 0;
 
-      // Tempo médio de casa
       const tenures = filteredRecords.map(r => r.tenureYears).filter(t => t !== null);
       const mediaTenure = tenures.length ? (tenures.reduce((a, b) => a + b, 0) / tenures.length).toFixed(1) + ' anos' : 'N/D';
 
@@ -570,7 +607,8 @@
     }
 
     function updateCharts() {
-      // 1. Gráfico de Dimensões
+      if (typeof Chart === 'undefined') return;
+
       const dimStats = computeDimensionStats(filteredRecords);
       if (charts.dim) charts.dim.destroy();
       charts.dim = new Chart(document.getElementById('chartDimensoes'), {
@@ -593,7 +631,6 @@
         }
       });
 
-      // 2. Gráfico de Evolução Mensal
       const months = [1,2,3,4,5,6,7,8,9,10,11,12];
       const volSeries = months.map(m => filteredRecords.filter(r => r.mes === m && r.tipo === 'Voluntário').length);
       const invSeries = months.map(m => filteredRecords.filter(r => r.mes === m && r.tipo === 'Involuntário').length);
@@ -611,7 +648,6 @@
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
       });
 
-      // 3. Motivos Voluntários
       const motivoCounts = {};
       filteredRecords.filter(r => r.tipo === 'Voluntário').forEach(r => {
         const m = r.motivo || 'Não informado';
@@ -701,7 +737,6 @@
       }).join('');
     }
 
-    // Motor de Parecer Executivo Instantâneo (Local + Opcional Gemini)
     function generateInstantOpinion(activeFilters) {
       const out = document.getElementById('aiOpinionOutput');
       const n = filteredRecords.length;
@@ -721,14 +756,12 @@
 
       const discSim = filteredRecords.filter(r => r.discriminacao === 'Sim').length;
 
-      // Top motivo voluntário
       const motCounts = {};
       filteredRecords.filter(r => r.tipo === 'Voluntário').forEach(r => {
         if (r.motivo && r.motivo !== 'Não informado') motCounts[r.motivo] = (motCounts[r.motivo] || 0) + 1;
       });
       const topMotivo = Object.entries(motCounts).sort((a, b) => b[1] - a[1])[0];
 
-      // Área mais crítica no recorte
       const depCounts = {};
       filteredRecords.forEach(r => { depCounts[r.depCod] = (depCounts[r.depCod] || 0) + 1; });
       const topDep = Object.entries(depCounts).sort((a, b) => b[1] - a[1])[0];
@@ -758,7 +791,6 @@
       out.innerHTML = html;
     }
 
-    // Copiar Parecer
     document.getElementById('btnCopyOpinion').addEventListener('click', () => {
       const text = document.getElementById('aiOpinionOutput').innerText;
       navigator.clipboard.writeText(text);
@@ -767,7 +799,6 @@
       setTimeout(() => btn.textContent = 'Copiar Parecer', 1800);
     });
 
-    // Exportar CSV do recorte
     document.getElementById('btnExport').addEventListener('click', () => {
       if (!filteredRecords.length) return;
       const exportData = filteredRecords.map(r => ({
@@ -794,7 +825,6 @@
       XLSX.writeFile(wb, 'People_Analytics_Desligamentos_Recorte.xlsx');
     });
 
-    // Configuração Opcional Gemini API
     const aiModal = document.getElementById('aiModal');
     document.getElementById('btnConfigAI').addEventListener('click', () => {
       document.getElementById('geminiKeyInput').value = localStorage.getItem('pa_gemini_key') || '';
@@ -828,6 +858,26 @@
     }
     updateAiBadge();
 
+    async function discoverAvailableModels(apiKey) {
+      const endpoints = [
+        `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}`,
+        `https://generativelanguage.googleapis.com/v1/models?key=${encodeURIComponent(apiKey)}`
+      ];
+      for (const url of endpoints) {
+        try {
+          const r = await fetch(url, { headers: { 'x-goog-api-key': apiKey } });
+          const j = await r.json();
+          if (r.ok && Array.isArray(j.models)) {
+            const usable = j.models
+              .filter(m => !m.supportedGenerationMethods || m.supportedGenerationMethods.includes('generateContent'))
+              .map(m => m.name.replace(/^models\//, ''));
+            if (usable.length) return usable;
+          }
+        } catch (_) {}
+      }
+      return ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+    }
+
     document.getElementById('btnGenerateGemini').addEventListener('click', async () => {
       const apiKey = localStorage.getItem('pa_gemini_key');
       if (!apiKey || !filteredRecords.length) return;
@@ -835,13 +885,13 @@
       const btn = document.getElementById('btnGenerateGemini');
       const out = document.getElementById('aiOpinionOutput');
       btn.disabled = true;
-      btn.textContent = 'Analisando com Gemini...';
+      btn.textContent = 'Consultando modelos...';
 
       const dimStats = computeDimensionStats(filteredRecords);
       const sampleVerbatims = filteredRecords
         .map(r => Object.values(r.verbatims).filter(Boolean).join(' | '))
         .filter(Boolean)
-        .slice(0, 15);
+        .slice(0, 12);
 
       const prompt = `Você é um especialista sênior em People Analytics e Estratégia de RH. Analise este recorte de pesquisa de desligamento (sem citar nomes pessoais) e emita um parecer executivo objetivo em 4 tópicos curtos (Diagnóstico, Causas-Raiz, Riscos/Alertas e Recomendações práticas para BPs/Liderança):
 - Total de desligamentos no filtro: ${filteredRecords.length}
@@ -850,21 +900,44 @@
 - Amostra de relatos qualitativos: ${JSON.stringify(sampleVerbatims)}`;
 
       try {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-        });
-        const data = await res.json();
-        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        const availableModels = await discoverAvailableModels(apiKey);
+        const prioritized = [
+          ...availableModels.filter(m => m.includes('flash')),
+          ...availableModels.filter(m => !m.includes('flash'))
+        ].slice(0, 6);
+
+        let text = null;
+        let usedModel = '';
+        const errors = [];
+
+        for (const modelName of prioritized) {
+          btn.textContent = `Testando ${modelName}...`;
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(apiKey)}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-goog-api-key': apiKey
+            },
+            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+          });
+          const data = await res.json();
+          if (res.ok && data?.candidates?.[0]?.content?.parts?.[0]?.text) {
+            text = data.candidates[0].content.parts[0].text;
+            usedModel = modelName;
+            break;
+          } else {
+            errors.push(`${modelName}: ${data?.error?.message || 'HTTP ' + res.status}`);
+          }
+        }
+
         if (text) {
-          out.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/
-/g, '<br>');
+          const badge = `<div class="text-[11px] text-emerald-700 font-semibold mb-1">Parecer aprofundado via Gemini (${usedModel})</div>`;
+          out.innerHTML = badge + text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').split('\n').join('<br>');
         } else {
-          alert('Não foi possível obter resposta da API. Verifique a chave.');
+          alert('Não foi possível gerar o parecer pela API Gemini.\nDetalhes:\n' + errors.join('\n'));
         }
       } catch (err) {
-        alert('Erro de conexão com a API Gemini.');
+        alert('Erro de rede/navegador ao chamar a API Gemini: ' + err.message);
       } finally {
         btn.disabled = false;
         btn.textContent = 'Aprofundar com Gemini API';
