@@ -531,7 +531,22 @@
 
     document.getElementById('searchVerbatim').addEventListener('input', renderVerbatimsTable);
 
+    let geminiRequestSeq = 0;
+    let activeGeminiController = null;
+
     function applyFilters() {
+      // Cancela requisição de IA anterior caso o filtro tenha mudado
+      geminiRequestSeq++;
+      if (activeGeminiController) {
+        try { activeGeminiController.abort(); } catch (_) {}
+        activeGeminiController = null;
+      }
+      const btnGem = document.getElementById('btnGenerateGemini');
+      if (btnGem) {
+        btnGem.disabled = false;
+        btnGem.textContent = 'Aprofundar com Gemini API';
+      }
+
       let activeCount = 0;
       const activeFilters = {};
 
@@ -858,44 +873,85 @@
     }
     updateAiBadge();
 
-    async function discoverAvailableModels(apiKey) {
-      const endpoints = [
-        `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}`,
-        `https://generativelanguage.googleapis.com/v1/models?key=${encodeURIComponent(apiKey)}`
-      ];
-      for (const url of endpoints) {
-        try {
-          const r = await fetch(url, { headers: { 'x-goog-api-key': apiKey } });
-          const j = await r.json();
-          if (r.ok && Array.isArray(j.models)) {
-            const usable = j.models
-              .filter(m => {
-                const name = (m.name || '').toLowerCase();
-                if (name.includes('tts') || name.includes('audio') || name.includes('imagen') || name.includes('veo') || name.includes('embedding') || name.includes('lyria') || name.includes('computer-use')) return false;
-                return !m.supportedGenerationMethods || m.supportedGenerationMethods.includes('generateContent');
-              })
-              .map(m => m.name.replace(/^models\//, ''));
-            if (usable.length) return usable;
+    let cachedGeminiModel = null;
+
+    async function resolveBestTextModel(apiKey, signal) {
+      if (cachedGeminiModel) return cachedGeminiModel;
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 5000);
+      try {
+        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}`, {
+          headers: { 'x-goog-api-key': apiKey },
+          signal: signal || controller.signal
+        });
+        const j = await r.json();
+        if (r.ok && Array.isArray(j.models)) {
+          const textModels = j.models
+            .filter(m => {
+              const name = (m.name || '').toLowerCase();
+              if (/tts|audio|imagen|veo|embedding|lyria|computer-use|live/.test(name)) return false;
+              return !m.supportedGenerationMethods || m.supportedGenerationMethods.includes('generateContent');
+            })
+            .map(m => m.name.replace(/^models\//, ''));
+
+          const preferred = textModels.find(m => m.includes('flash') && !m.includes('lite'))
+            || textModels.find(m => m.includes('flash'))
+            || textModels[0];
+
+          if (preferred) {
+            cachedGeminiModel = preferred;
+            return preferred;
           }
-        } catch (_) {}
+        }
+      } catch (_) {}
+      finally {
+        clearTimeout(timer);
       }
-      return ['gemini-3.8-flash', 'gemini-3-flash-preview', 'gemini-2.5-flash-lite'];
+      return 'gemini-3.8-flash';
+    }
+
+    async function callGeminiModel(apiKey, modelName, prompt, signal) {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(apiKey)}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey
+        },
+        signal,
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { responseModalities: ['TEXT'] }
+        })
+      });
+      const data = await res.json();
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (res.ok && text) return { text };
+      return { error: data?.error?.message || `HTTP ${res.status}` };
     }
 
     document.getElementById('btnGenerateGemini').addEventListener('click', async () => {
       const apiKey = localStorage.getItem('pa_gemini_key');
       if (!apiKey || !filteredRecords.length) return;
 
+      const reqId = ++geminiRequestSeq;
+      if (activeGeminiController) {
+        try { activeGeminiController.abort(); } catch (_) {}
+      }
+      const controller = new AbortController();
+      activeGeminiController = controller;
+      const timeoutId = setTimeout(() => controller.abort(), 18000);
+
       const btn = document.getElementById('btnGenerateGemini');
       const out = document.getElementById('aiOpinionOutput');
       btn.disabled = true;
-      btn.textContent = 'Consultando modelos...';
+      btn.textContent = 'Gerando parecer...';
 
       const dimStats = computeDimensionStats(filteredRecords);
       const sampleVerbatims = filteredRecords
         .map(r => Object.values(r.verbatims).filter(Boolean).join(' | '))
         .filter(Boolean)
-        .slice(0, 12);
+        .slice(0, 10)
+        .map(s => s.slice(0, 180));
 
       const prompt = `Você é um especialista sênior em People Analytics e Estratégia de RH. Analise este recorte de pesquisa de desligamento (sem citar nomes pessoais) e emita um parecer executivo objetivo em 4 tópicos curtos (Diagnóstico, Causas-Raiz, Riscos/Alertas e Recomendações práticas para BPs/Liderança):
 - Total de desligamentos no filtro: ${filteredRecords.length}
@@ -904,53 +960,42 @@
 - Amostra de relatos qualitativos: ${JSON.stringify(sampleVerbatims)}`;
 
       try {
-        const availableModels = await discoverAvailableModels(apiKey);
-        const prioritized = [
-          'gemini-3.8-flash',
-          ...availableModels.filter(m => m.includes('3.') && m.includes('flash')),
-          ...availableModels.filter(m => m.includes('flash') && !m.includes('3.')),
-          ...availableModels.filter(m => !m.includes('flash'))
-        ];
-        const uniquePrioritized = [...new Set(prioritized)].slice(0, 8);
+        const modelName = await resolveBestTextModel(apiKey, controller.signal);
+        if (reqId !== geminiRequestSeq) return;
+        btn.textContent = `Consultando ${modelName}...`;
 
-        let text = null;
-        let usedModel = '';
-        const errors = [];
-
-        for (const modelName of uniquePrioritized) {
-          btn.textContent = `Testando ${modelName}...`;
-          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(apiKey)}`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-goog-api-key': apiKey
-            },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: { responseModalities: ['TEXT'] }
-            })
-          });
-          const data = await res.json();
-          if (res.ok && data?.candidates?.[0]?.content?.parts?.[0]?.text) {
-            text = data.candidates[0].content.parts[0].text;
-            usedModel = modelName;
-            break;
-          } else {
-            errors.push(`${modelName}: ${data?.error?.message || 'HTTP ' + res.status}`);
+        let result = await callGeminiModel(apiKey, modelName, prompt, controller.signal);
+        if (!result.text && reqId === geminiRequestSeq && !controller.signal.aborted) {
+          cachedGeminiModel = null;
+          const fallbackModel = modelName.includes('lite') ? 'gemini-3.8-flash' : 'gemini-2.5-flash-lite';
+          if (fallbackModel !== modelName) {
+            btn.textContent = `Tentando ${fallbackModel}...`;
+            result = await callGeminiModel(apiKey, fallbackModel, prompt, controller.signal);
+            if (result.text) cachedGeminiModel = fallbackModel;
           }
         }
 
-        if (text) {
-          const badge = `<div class="text-[11px] text-emerald-700 font-semibold mb-1">Parecer aprofundado via Gemini (${usedModel})</div>`;
-          out.innerHTML = badge + text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').split('\n').join('<br>');
+        if (reqId !== geminiRequestSeq) return;
+
+        if (result.text) {
+          const badge = `<div class="text-[11px] text-emerald-700 font-semibold mb-1">Parecer aprofundado via Gemini (${cachedGeminiModel || modelName})</div>`;
+          out.innerHTML = badge + result.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').split('\n').join('<br>');
         } else {
-          alert('Não foi possível gerar o parecer pela API Gemini.\nDetalhes:\n' + errors.join('\n'));
+          out.innerHTML += `<div class="mt-2 p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-900"><strong>Aviso da API Gemini:</strong> ${result.error || 'Tempo limite excedido'}. O parecer local acima continua disponível para uso imediato.</div>`;
         }
       } catch (err) {
-        alert('Erro de rede/navegador ao chamar a API Gemini: ' + err.message);
+        if (reqId !== geminiRequestSeq) return;
+        const msg = err.name === 'AbortError'
+          ? 'A consulta à API demorou mais que o esperado (18s) ou foi cancelada ao alterar o filtro.'
+          : ('Erro de conexão: ' + err.message);
+        out.innerHTML += `<div class="mt-2 p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-900"><strong>Aviso da API Gemini:</strong> ${msg} O parecer local acima continua disponível para uso imediato.</div>`;
       } finally {
-        btn.disabled = false;
-        btn.textContent = 'Aprofundar com Gemini API';
+        clearTimeout(timeoutId);
+        if (activeGeminiController === controller) activeGeminiController = null;
+        if (reqId === geminiRequestSeq) {
+          btn.disabled = false;
+          btn.textContent = 'Aprofundar com Gemini API';
+        }
       }
     });
   </script>
