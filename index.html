@@ -875,39 +875,13 @@
 
     let cachedGeminiModel = null;
 
-    async function resolveBestTextModel(apiKey, signal) {
-      if (cachedGeminiModel) return cachedGeminiModel;
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 5000);
-      try {
-        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}`, {
-          headers: { 'x-goog-api-key': apiKey },
-          signal: signal || controller.signal
-        });
-        const j = await r.json();
-        if (r.ok && Array.isArray(j.models)) {
-          const textModels = j.models
-            .filter(m => {
-              const name = (m.name || '').toLowerCase();
-              if (/tts|audio|imagen|veo|embedding|lyria|computer-use|live/.test(name)) return false;
-              return !m.supportedGenerationMethods || m.supportedGenerationMethods.includes('generateContent');
-            })
-            .map(m => m.name.replace(/^models\//, ''));
-
-          const preferred = textModels.find(m => m.includes('flash') && !m.includes('lite'))
-            || textModels.find(m => m.includes('flash'))
-            || textModels[0];
-
-          if (preferred) {
-            cachedGeminiModel = preferred;
-            return preferred;
-          }
-        }
-      } catch (_) {}
-      finally {
-        clearTimeout(timer);
-      }
-      return 'gemini-3.8-flash';
+    function renderGeminiAlert(out, message) {
+      const existing = out.querySelector('.gemini-alert-box');
+      if (existing) existing.remove();
+      const box = document.createElement('div');
+      box.className = 'gemini-alert-box mt-2 p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-900';
+      box.innerHTML = `<strong>Aviso da API Gemini:</strong> ${message} O parecer local acima continua disponível para uso imediato.`;
+      out.appendChild(box);
     }
 
     async function callGeminiModel(apiKey, modelName, prompt, signal) {
@@ -959,36 +933,41 @@
 - Ranking das Dimensões (% Favorabilidade): ${dimStats.map(d => `${d.dimensao}: ${d.favPct.toFixed(1)}%`).join(', ')}
 - Amostra de relatos qualitativos: ${JSON.stringify(sampleVerbatims)}`;
 
-      try {
-        const modelName = await resolveBestTextModel(apiKey, controller.signal);
-        if (reqId !== geminiRequestSeq) return;
-        btn.textContent = `Consultando ${modelName}...`;
+      const candidateModels = cachedGeminiModel
+        ? [cachedGeminiModel, 'gemini-3.8-flash', 'gemini-3.5-flash-lite']
+        : ['gemini-3.8-flash', 'gemini-3.5-flash-lite'];
+      const uniqueCandidates = [...new Set(candidateModels)];
 
-        let result = await callGeminiModel(apiKey, modelName, prompt, controller.signal);
-        if (!result.text && reqId === geminiRequestSeq && !controller.signal.aborted) {
-          cachedGeminiModel = null;
-          const fallbackModel = modelName.includes('lite') ? 'gemini-3.8-flash' : 'gemini-2.5-flash-lite';
-          if (fallbackModel !== modelName) {
-            btn.textContent = `Tentando ${fallbackModel}...`;
-            result = await callGeminiModel(apiKey, fallbackModel, prompt, controller.signal);
-            if (result.text) cachedGeminiModel = fallbackModel;
+      try {
+        let result = null;
+        let usedModel = '';
+
+        for (const modelName of uniqueCandidates) {
+          if (reqId !== geminiRequestSeq || controller.signal.aborted) return;
+          btn.textContent = `Consultando ${modelName}...`;
+          result = await callGeminiModel(apiKey, modelName, prompt, controller.signal);
+          if (result.text) {
+            usedModel = modelName;
+            cachedGeminiModel = modelName;
+            break;
           }
+          cachedGeminiModel = null;
         }
 
         if (reqId !== geminiRequestSeq) return;
 
-        if (result.text) {
-          const badge = `<div class="text-[11px] text-emerald-700 font-semibold mb-1">Parecer aprofundado via Gemini (${cachedGeminiModel || modelName})</div>`;
+        if (result && result.text) {
+          const badge = `<div class="text-[11px] text-emerald-700 font-semibold mb-1">Parecer aprofundado via Gemini (${usedModel})</div>`;
           out.innerHTML = badge + result.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').split('\n').join('<br>');
         } else {
-          out.innerHTML += `<div class="mt-2 p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-900"><strong>Aviso da API Gemini:</strong> ${result.error || 'Tempo limite excedido'}. O parecer local acima continua disponível para uso imediato.</div>`;
+          renderGeminiAlert(out, (result && result.error) || 'Não foi possível obter resposta dos modelos Gemini 3.x.');
         }
       } catch (err) {
         if (reqId !== geminiRequestSeq) return;
         const msg = err.name === 'AbortError'
           ? 'A consulta à API demorou mais que o esperado (18s) ou foi cancelada ao alterar o filtro.'
           : ('Erro de conexão: ' + err.message);
-        out.innerHTML += `<div class="mt-2 p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-900"><strong>Aviso da API Gemini:</strong> ${msg} O parecer local acima continua disponível para uso imediato.</div>`;
+        renderGeminiAlert(out, msg);
       } finally {
         clearTimeout(timeoutId);
         if (activeGeminiController === controller) activeGeminiController = null;
