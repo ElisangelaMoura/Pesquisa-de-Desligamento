@@ -894,12 +894,24 @@
         signal,
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { responseModalities: ['TEXT'] }
+          generationConfig: {
+            responseModalities: ['TEXT'],
+            maxOutputTokens: 4096,
+            temperature: 0.4,
+            thinkingConfig: { thinkingBudget: 0 }
+          }
         })
       });
       const data = await res.json();
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (res.ok && text) return { text };
+      const candidate = data?.candidates?.[0];
+      const parts = candidate?.content?.parts || [];
+      const text = parts
+        .filter(p => typeof p.text === 'string' && !p.thought)
+        .map(p => p.text)
+        .join('')
+        .trim();
+      const finishReason = candidate?.finishReason || '';
+      if (res.ok && text) return { text, finishReason };
       return { error: data?.error?.message || `HTTP ${res.status}` };
     }
 
@@ -913,7 +925,7 @@
       }
       const controller = new AbortController();
       activeGeminiController = controller;
-      const timeoutId = setTimeout(() => controller.abort(), 18000);
+      const timeoutId = setTimeout(() => controller.abort(), 35000);
 
       const btn = document.getElementById('btnGenerateGemini');
       const out = document.getElementById('aiOpinionOutput');
@@ -957,7 +969,10 @@
         if (reqId !== geminiRequestSeq) return;
 
         if (result && result.text) {
-          const badge = `<div class="text-[11px] text-emerald-700 font-semibold mb-1">Parecer aprofundado via Gemini (${usedModel})</div>`;
+          const warnTrunc = result.finishReason === 'MAX_TOKENS'
+            ? ' <span class="text-amber-700 font-normal">(resposta longa atingiu o limite de tokens)</span>'
+            : '';
+          const badge = `<div class="text-[11px] text-emerald-700 font-semibold mb-1">Parecer aprofundado via Gemini (${usedModel})${warnTrunc}</div>`;
           out.innerHTML = badge + result.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').split('\n').join('<br>');
         } else {
           renderGeminiAlert(out, (result && result.error) || 'Não foi possível obter resposta dos modelos Gemini 3.x.');
@@ -965,7 +980,7 @@
       } catch (err) {
         if (reqId !== geminiRequestSeq) return;
         const msg = err.name === 'AbortError'
-          ? 'A consulta à API demorou mais que o esperado (18s) ou foi cancelada ao alterar o filtro.'
+          ? 'A consulta à API demorou mais que o esperado (35s) ou foi cancelada ao alterar o filtro.'
           : ('Erro de conexão: ' + err.message);
         renderGeminiAlert(out, msg);
       } finally {
